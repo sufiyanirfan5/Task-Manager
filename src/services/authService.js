@@ -20,8 +20,9 @@ export const authService = {
       // Update profile with display name
       await updateProfile(user, { displayName });
       
-      // Send email verification
-      await sendEmailVerification(user);
+      // Send email verification with root domain to avoid Vercel 404 issues
+      const continueUrl = window.location.origin;
+      await sendEmailVerification(user, { url: continueUrl });
       
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
@@ -80,7 +81,9 @@ export const authService = {
   // Send password reset email
   async forgotPassword(email) {
     try {
-      await sendPasswordResetEmail(auth, email);
+      // Use root domain for continueUrl to avoid Vercel 404 issues
+      const continueUrl = window.location.origin;
+      await sendPasswordResetEmail(auth, email, { url: continueUrl });
       return { success: true };
     } catch (error) {
       console.error('Password reset error:', error);
@@ -96,7 +99,9 @@ export const authService = {
     try {
       const user = auth.currentUser;
       if (user) {
-        await sendEmailVerification(user);
+        // Use root domain for continueUrl to avoid Vercel 404 issues
+        const continueUrl = window.location.origin;
+        await sendEmailVerification(user, { url: continueUrl });
         return { success: true };
       }
       return { success: false, error: 'No user logged in' };

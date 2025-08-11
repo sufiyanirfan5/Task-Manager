@@ -6,6 +6,7 @@ import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import ForgotPassword from './components/auth/ForgotPassword';
 import VerifyEmail from './components/auth/VerifyEmail';
+import EmailVerificationHandler from './components/auth/EmailVerificationHandler';
 import Dashboard from './components/dashboard/Dashboard';
 
 // Protected Route Component
@@ -72,59 +73,61 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          {/* Public Routes */}
-          <Route 
-            path="/login" 
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/signup" 
-            element={
-              <PublicRoute>
-                <Signup />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/forgot-password" 
-            element={
-              <PublicRoute>
-                <ForgotPassword />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/verify-email" 
-            element={
-              <PublicRoute>
-                <VerifyEmail />
-              </PublicRoute>
-            } 
-          />
+      <EmailVerificationHandler>
+        <div className="App">
+          <Routes>
+            {/* Public Routes */}
+            <Route 
+              path="/login" 
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              } 
+            />
+            <Route 
+              path="/verify-email" 
+              element={
+                <PublicRoute>
+                  <VerifyEmail />
+                </PublicRoute>
+              } 
+            />
 
-          {/* Protected Routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </div>
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
+      </EmailVerificationHandler>
     </Router>
   );
 }
