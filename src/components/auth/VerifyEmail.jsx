@@ -4,6 +4,7 @@ import { authService } from '../../services/authService';
 import useAuthStore from '../../store/authStore';
 import Swal from 'sweetalert2';
 import { Mail, CheckCircle, RefreshCw } from 'lucide-react';
+import { getAuth } from 'firebase/auth';
 
 const VerifyEmail = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -58,10 +59,29 @@ const VerifyEmail = () => {
 
   const handleCheckVerification = async () => {
     try {
-      const user = authService.getCurrentUser();
-      if (user && user.emailVerified) {
+      // Get the current Firebase user
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        Swal.fire({
+          icon: 'error',
+          title: 'No User Found',
+          text: 'Please log in again to check verification status.',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+
+      // Call reload() to refresh the user's state from Firebase
+      await currentUser.reload();
+      
+      // Re-check the emailVerified property after reload
+      if (currentUser.emailVerified) {
+        // Update Zustand auth state
         setEmailVerified(true);
         setIsVerified(true);
+        
         Swal.fire({
           icon: 'success',
           title: 'Email Verified!',
@@ -69,20 +89,25 @@ const VerifyEmail = () => {
           timer: 2000,
           showConfirmButton: false
         });
+        
+        // Redirect to dashboard after showing success message
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {
+        // Show warning message if not verified
         Swal.fire({
-          icon: 'info',
-          title: 'Not Verified Yet',
-          text: 'Please check your email and click the verification link.',
+          icon: 'warning',
+          title: 'Email Not Verified Yet',
+          text: 'Your email is not verified yet. Please check your email and click the verification link.',
           confirmButtonText: 'OK'
         });
       }
     } catch (error) {
+      console.error('Verification check error:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'An unexpected error occurred'
+        text: 'An unexpected error occurred while checking verification status.',
+        confirmButtonText: 'OK'
       });
     }
   };
