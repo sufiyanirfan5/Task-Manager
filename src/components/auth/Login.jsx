@@ -4,6 +4,8 @@ import * as Yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import useAuthStore from '../../store/authStore';
+import useTaskStore from '../../store/taskStore';
+import { getUserTasks } from '../../services/taskService';
 import Swal from 'sweetalert2';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
@@ -12,6 +14,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const setAuth = useAuthStore(state => state.setAuth);
+  const setTasks = useTaskStore(state => state.setTasks);
 
   // Validation schema
   const validationSchema = Yup.object({
@@ -29,8 +32,17 @@ const Login = () => {
       const result = await authService.signIn(values.email, values.password);
       
       if (result.success) {
-        setAuth(result.user.uid, result.user.email, result.user.isEmailVerified);
-        
+        const { uid, email, emailVerified } = result.user;
+        setAuth(uid, email, emailVerified);
+
+        // Fetch and set tasks for this user
+        const tasksResult = await getUserTasks(uid);
+        if(tasksResult.success) {
+          setTasks(tasksResult.tasks);
+        } else {
+          setTasks([]);
+        }
+
         Swal.fire({
           icon: 'success',
           title: 'Welcome back!',
@@ -173,4 +185,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;

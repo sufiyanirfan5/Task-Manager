@@ -39,14 +39,13 @@ const AddTaskForm = ({ onTaskAdded }) => {
         updatedAt: new Date().toISOString()
       };
 
-      // Add to Firebase
+      // Add to Firebase with userId
       const result = await taskService.addTask(taskData, userId);
       
       if (result.success) {
         // Add to local store
         addTask(result.task);
         
-        // Show success message
         Swal.fire({
           icon: 'success',
           title: 'Task Added!',
@@ -55,10 +54,8 @@ const AddTaskForm = ({ onTaskAdded }) => {
           showConfirmButton: false
         });
         
-        // Reset form
         resetForm();
         
-        // Notify parent component
         if (onTaskAdded) {
           onTaskAdded();
         }
@@ -189,4 +186,4 @@ const AddTaskForm = ({ onTaskAdded }) => {
   );
 };
 
-export default AddTaskForm; 
+export default AddTaskForm;
