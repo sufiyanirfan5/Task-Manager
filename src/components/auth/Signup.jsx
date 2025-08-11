@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { auth } from '../../firebase';
 import useAuthStore from '../../store/authStore';
 import Swal from 'sweetalert2';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
@@ -14,7 +15,6 @@ const Signup = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore(state => state.setAuth);
 
-  // Validation schema
   const validationSchema = Yup.object({
     displayName: Yup.string()
       .min(2, 'Name must be at least 2 characters')
@@ -35,33 +35,37 @@ const Signup = () => {
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     setIsLoading(true);
     try {
-      const result = await authService.signUp(values.email, values.password, values.displayName);
-      
-      if (result.success) {
-        setAuth(result.user.uid, result.user.email, result.user.isEmailVerified);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Account Created!',
-          text: 'Please check your email to verify your account before signing in.',
-          confirmButtonText: 'OK'
-        });
-        
-        navigate('/verify-email');
-      } else {
-        setErrors({ submit: result.error });
-        Swal.fire({
-          icon: 'error',
-          title: 'Signup Failed',
-          text: result.error
-        });
-      }
+      // Create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Update profile name
+      await updateProfile(user, { displayName: values.displayName });
+
+      // Send email verification with continue URL
+      await sendEmailVerification(user, {
+        url: 'https://task-manager-phi-seven-55.vercel.app/verify-email', // ✅ Make sure this is added in Firebase Authorized Domains
+        handleCodeInApp: true
+      });
+
+      // Store auth in Zustand
+      setAuth(user.uid, user.email, user.emailVerified);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Account Created!',
+        text: 'Please check your email to verify your account before signing in.',
+        confirmButtonText: 'OK'
+      });
+
+      navigate('/verify-email');
     } catch (error) {
-      setErrors({ submit: 'An unexpected error occurred' });
+      console.error(error);
+      setErrors({ submit: error.message });
       Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'An unexpected error occurred'
+        title: 'Signup Failed',
+        text: error.message
       });
     } finally {
       setIsLoading(false);
@@ -86,20 +90,16 @@ const Signup = () => {
             </Link>
           </p>
         </div>
-        
+
         <div className="card">
           <Formik
-            initialValues={{ 
-              displayName: '', 
-              email: '', 
-              password: '', 
-              confirmPassword: '' 
-            }}
+            initialValues={{ displayName: '', email: '', password: '', confirmPassword: '' }}
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
           >
             {({ isSubmitting, errors }) => (
               <Form className="space-y-6">
+                {/* Name */}
                 <div>
                   <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
                     Full Name
@@ -120,6 +120,7 @@ const Signup = () => {
                   <ErrorMessage name="displayName" component="div" className="mt-1 text-sm text-red-600" />
                 </div>
 
+                {/* Email */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Email address
@@ -140,6 +141,7 @@ const Signup = () => {
                   <ErrorMessage name="email" component="div" className="mt-1 text-sm text-red-600" />
                 </div>
 
+                {/* Password */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
@@ -161,16 +163,13 @@ const Signup = () => {
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400" />
-                      )}
+                      {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                     </button>
                   </div>
                   <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600" />
                 </div>
 
+                {/* Confirm Password */}
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                     Confirm Password
@@ -192,22 +191,20 @@ const Signup = () => {
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400" />
-                      )}
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                     </button>
                   </div>
                   <ErrorMessage name="confirmPassword" component="div" className="mt-1 text-sm text-red-600" />
                 </div>
 
+                {/* Error message */}
                 {errors.submit && (
                   <div className="text-sm text-red-600 text-center">
                     {errors.submit}
                   </div>
                 )}
 
+                {/* Submit */}
                 <div>
                   <button
                     type="submit"
@@ -226,4 +223,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; 
+export default Signup;
